@@ -1,8 +1,8 @@
 Summary: Shared MIME information database
 Name: shared-mime-info
 Version: 1.0
+Release: 7%{?dist}
 Epoch: 1
-Release: 4%{?dist}
 License: GPLv2+
 Group: System Environment/Base
 URL: http://freedesktop.org/Software/shared-mime-info
@@ -12,7 +12,7 @@ Source1: defaults.list
 # for i in `cat /home/hadess/Projects/jhbuild/totem/data/mime-type-list.txt | grep -v real | grep -v ^#` ; do if grep MimeType /home/hadess/Projects/jhbuild/rhythmbox/data/rhythmbox.desktop.in.in | grep -q "$i;" ; then echo "$i=rhythmbox.desktop;totem.desktop;" >> totem-defaults.list ; else echo "$i=totem.desktop;" >> totem-defaults.list ; fi ; done ; for i in `cat /home/hadess/Projects/jhbuild/totem/data/uri-schemes-list.txt | grep -v ^#` ; do echo "x-scheme-handler/$i=totem.desktop;" >> totem-defaults.list ; done
 Source2: totem-defaults.list
 # Generated with:
-# for i in `grep MimeType= /usr/share/applications/gnome-file-roller.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do if ! `grep -q $i defaults.list` ; then echo $i=gnome-file-roller.desktop\; >> file-roller-defaults.list ; fi ; done
+# for i in `grep MimeType= /usr/share/applications/gnome-file-roller.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do if ! `grep -q $i defaults.list` application/x-source-rpm ; then echo $i=gnome-file-roller.desktop\; >> file-roller-defaults.list ; fi ; done
 Source3: file-roller-defaults.list
 # Generated with:
 # for i in `grep MimeType= /usr/share/applications/shotwell-viewer.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do echo $i=shotwell-viewer.desktop\; >> shotwell-viewer-defaults.list ; done
@@ -20,6 +20,8 @@ Source4: shotwell-viewer-defaults.list
 
 # Work-around for https://bugs.freedesktop.org/show_bug.cgi?id=40354
 Patch0: 0001-Remove-sub-classing-from-OO.o-mime-types.patch
+
+Patch1: 0001-Add-mime-type-for-source-RPMs.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  libxml2-devel
@@ -42,6 +44,8 @@ and looking up the correct MIME type in a database.
 %prep
 %setup -q
 %patch0 -p1 -b .ooo-zip
+%patch1 -p1
+sed -i s/totem\.desktop/vlc\.desktop\;totem\.desktop/g %SOURCE1
 
 %build
 
@@ -87,6 +91,15 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/locale/*
 %{_mandir}/man*/*
 
 %changelog
+* Fri Nov 30 2012 Bastien Nocera <bnocera@redhat.com> 1.0-6
+- Open src.rpm files in file-roller instead of PackageKit
+
+* Mon Nov 05 2012 Bastien Nocera <bnocera@redhat.com> 1.0-6
+- Rebuild file-roller's default list
+
+* Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.0-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
 * Tue May 22 2012 Rex Dieter <rdieter@fedoraproject.org> 
 - 1.0-4
 - defaults.list: s/mozilla-firefox/firefox/ (see #736558)

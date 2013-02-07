@@ -1,0 +1,30 @@
+From 4462b30c5b9592f134ce7d4fb7b7139f58c92a78 Mon Sep 17 00:00:00 2001
+From: Bastien Nocera <hadess@hadess.net>
+Date: Fri, 30 Nov 2012 15:50:49 +0100
+Subject: [PATCH] Add mime-type for source RPMs
+
+---
+ freedesktop.org.xml.in       |   7 +++++++
+ tests/foo-0.1-1.fc18.src.rpm | Bin 0 -> 2393 bytes
+ tests/list                   |   2 ++
+ 3 files changed, 9 insertions(+)
+ create mode 100644 tests/foo-0.1-1.fc18.src.rpm
+
+diff --git a/freedesktop.org.xml.in b/freedesktop.org.xml.in
+index e67e2c7..8f1e5ba 100644
+--- a/freedesktop.org.xml.in
++++ b/freedesktop.org.xml.in
+@@ -2936,6 +2936,13 @@ command to generate the output files.
+     </magic>
+     <glob pattern="*.rpm"/>
+   </mime-type>
++  <mime-type type="application/x-source-rpm">
++    <_comment>Source RPM package</_comment>
++    <generic-icon name="package-x-generic"/>
++    <sub-class-of type="application/x-redhat-package-manager"/>
++    <generic-icon name="package-x-generic"/>
++    <glob pattern="*.src.rpm"/>
++  </mime-type>
+   <mime-type type="application/x-ruby">
+     <_comment>Ruby script</_comment>
+     <sub-class-of type="application/x-executable"/>
