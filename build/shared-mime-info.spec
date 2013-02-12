@@ -46,6 +46,7 @@ and looking up the correct MIME type in a database.
 %patch0 -p1 -b .ooo-zip
 %patch1 -p1
 sed -i s/totem\.desktop/vlc\.desktop\;totem\.desktop/g %SOURCE1
+sed -i s/totem\.desktop/vlc\.desktop\;totem\.desktop/g %SOURCE2
 
 %build
 
