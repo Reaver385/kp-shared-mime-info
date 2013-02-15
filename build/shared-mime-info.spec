@@ -1,7 +1,7 @@
 Summary: Shared MIME information database
 Name: shared-mime-info
-Version: 1.0
-Release: 7%{?dist}
+Version: 1.1
+Release: 1%{?dist}
 Epoch: 1
 License: GPLv2+
 Group: System Environment/Base
@@ -20,8 +20,6 @@ Source4: shotwell-viewer-defaults.list
 
 # Work-around for https://bugs.freedesktop.org/show_bug.cgi?id=40354
 Patch0: 0001-Remove-sub-classing-from-OO.o-mime-types.patch
-
-Patch1: 0001-Add-mime-type-for-source-RPMs.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  libxml2-devel
@@ -44,7 +42,6 @@ and looking up the correct MIME type in a database.
 %prep
 %setup -q
 %patch0 -p1 -b .ooo-zip
-%patch1 -p1
 sed -i s/totem\.desktop/vlc\.desktop\;totem\.desktop/g %SOURCE1
 sed -i s/totem\.desktop/vlc\.desktop\;totem\.desktop/g %SOURCE2
 
@@ -92,6 +89,9 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/locale/*
 %{_mandir}/man*/*
 
 %changelog
+* Wed Feb 13 2013 Bastien Nocera <bnocera@redhat.com> 1.1-1
+- Update to 1.1
+
 * Fri Nov 30 2012 Bastien Nocera <bnocera@redhat.com> 1.0-6
 - Open src.rpm files in file-roller instead of PackageKit
 
