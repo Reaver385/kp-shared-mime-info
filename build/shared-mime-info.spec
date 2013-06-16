@@ -1,7 +1,7 @@
 Summary: Shared MIME information database
 Name: shared-mime-info
 Version: 1.1
-Release: 1%{?dist}
+Release: 4%{?dist}
 Epoch: 1
 License: GPLv2+
 Group: System Environment/Base
@@ -12,7 +12,7 @@ Source1: defaults.list
 # for i in `cat /home/hadess/Projects/jhbuild/totem/data/mime-type-list.txt | grep -v real | grep -v ^#` ; do if grep MimeType /home/hadess/Projects/jhbuild/rhythmbox/data/rhythmbox.desktop.in.in | grep -q "$i;" ; then echo "$i=rhythmbox.desktop;totem.desktop;" >> totem-defaults.list ; else echo "$i=totem.desktop;" >> totem-defaults.list ; fi ; done ; for i in `cat /home/hadess/Projects/jhbuild/totem/data/uri-schemes-list.txt | grep -v ^#` ; do echo "x-scheme-handler/$i=totem.desktop;" >> totem-defaults.list ; done
 Source2: totem-defaults.list
 # Generated with:
-# for i in `grep MimeType= /usr/share/applications/gnome-file-roller.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do if ! `grep -q $i defaults.list` application/x-source-rpm ; then echo $i=gnome-file-roller.desktop\; >> file-roller-defaults.list ; fi ; done
+# for i in `grep MimeType= /usr/share/applications/file-roller.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` application/x-source-rpm ; do if ! `grep -q $i defaults.list` ; then echo $i=file-roller.desktop\; >> file-roller-defaults.list ; fi ; done
 Source3: file-roller-defaults.list
 # Generated with:
 # for i in `grep MimeType= /usr/share/applications/shotwell-viewer.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do echo $i=shotwell-viewer.desktop\; >> shotwell-viewer-defaults.list ; done
@@ -89,6 +89,15 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/locale/*
 %{_mandir}/man*/*
 
 %changelog
+* Thu Feb 21 2013 Kalev Lember <kalevlember@gmail.com> - 1.1-4
+- Update for file-roller desktop file vendor prefix removal
+
+* Thu Feb 21 2013 Kalev Lember <kalevlember@gmail.com> - 1.1-3
+- Update for eog desktop file vendor prefix removal
+
+* Sun Feb 17 2013 Christoph Wickert <cwickert@fedoraproject.org> - 1.1-2
+- De-vendorize defaults.list (https://fedorahosted.org/fesco/ticket/1077)
+
 * Wed Feb 13 2013 Bastien Nocera <bnocera@redhat.com> 1.1-1
 - Update to 1.1
 
