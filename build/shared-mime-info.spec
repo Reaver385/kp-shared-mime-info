@@ -1,7 +1,7 @@
 Summary: Shared MIME information database
 Name: shared-mime-info
-Version: 1.1
-Release: 4%{?dist}
+Version: 1.2
+Release: 1%{?dist}
 Epoch: 1
 License: GPLv2+
 Group: System Environment/Base
@@ -27,7 +27,6 @@ BuildRequires:  glib2-devel
 BuildRequires:  gettext
 # For intltool:
 BuildRequires: perl(XML::Parser) intltool
-Requires: pkgconfig
 
 Requires(post): glib2
 
@@ -85,10 +84,25 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/locale/*
 %{_bindir}/*
 %{_datadir}/mime/packages/*
 %{_datadir}/applications/defaults.list
-%{_datadir}/pkgconfig/*
+# better to co-own this dir than to pull in pkgconfig
+%dir %{_datadir}/pkgconfig
+%{_datadir}/pkgconfig/shared-mime-info.pc
 %{_mandir}/man*/*
 
 %changelog
+* Mon Sep 30 2013 Bastien Nocera <bnocera@redhat.com> 1.2-1
+- Update to 1.2
+- Open disk images with gnome-disk-image-writer
+
+* Mon Aug 26 2013 Kalev Lember <kalevlember@gmail.com> - 1.1-7
+- Don't open XWD files in eog / gthumb (#735611)
+
+* Sun Aug 04 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.1-6
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_20_Mass_Rebuild
+
+* Sat Jun  8 2013 Matthias Clasen <mclasen@redhat.com> - 1.1-5
+- Drop pkgconfig dep, instead co-own /usr/share/pkgconfig
+
 * Thu Feb 21 2013 Kalev Lember <kalevlember@gmail.com> - 1.1-4
 - Update for file-roller desktop file vendor prefix removal
 
