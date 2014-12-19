@@ -1,7 +1,7 @@
 Summary: Shared MIME information database
 Name: shared-mime-info
-Version: 1.2
-Release: 1%{?dist}
+Version: 1.3
+Release: 15%{?dist}
 Epoch: 1
 License: GPLv2+
 Group: System Environment/Base
@@ -9,17 +9,25 @@ URL: http://freedesktop.org/Software/shared-mime-info
 Source0: http://people.freedesktop.org/~hadess/%{name}-%{version}.tar.xz
 Source1: defaults.list
 # Generated with:
-# for i in `cat /home/hadess/Projects/jhbuild/totem/data/mime-type-list.txt | grep -v real | grep -v ^#` ; do if grep MimeType /home/hadess/Projects/jhbuild/rhythmbox/data/rhythmbox.desktop.in.in | grep -q "$i;" ; then echo "$i=rhythmbox.desktop;totem.desktop;" >> totem-defaults.list ; else echo "$i=totem.desktop;" >> totem-defaults.list ; fi ; done ; for i in `cat /home/hadess/Projects/jhbuild/totem/data/uri-schemes-list.txt | grep -v ^#` ; do echo "x-scheme-handler/$i=totem.desktop;" >> totem-defaults.list ; done
+# for i in `cat /home/hadess/Projects/jhbuild/totem/data/mime-type-list.txt | grep -v audio/flac | grep -v ^#` ; do if grep MimeType /home/hadess/Projects/jhbuild/rhythmbox/data/rhythmbox.desktop.in.in | grep -q "$i;" ; then echo "$i=rhythmbox.desktop;org.gnome.Totem.desktop;" >> totem-defaults.list ; else echo "$i=org.gnome.Totem.desktop;" >> totem-defaults.list ; fi ; done ; for i in `cat /home/hadess/Projects/jhbuild/totem/data/uri-schemes-list.txt | grep -v ^#` ; do echo "x-scheme-handler/$i=org.gnome.Totem.desktop;" >> totem-defaults.list ; done
 Source2: totem-defaults.list
 # Generated with:
-# for i in `grep MimeType= /usr/share/applications/file-roller.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` application/x-source-rpm ; do if ! `grep -q $i defaults.list` ; then echo $i=file-roller.desktop\; >> file-roller-defaults.list ; fi ; done
+# for i in `grep MimeType= /usr/share/applications/org.gnome.FileRoller.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` application/x-source-rpm ; do if ! `grep -q $i defaults.list` ; then echo $i=org.gnome.FileRoller.desktop\; >> file-roller-defaults.list ; fi ; done
 Source3: file-roller-defaults.list
 # Generated with:
-# for i in `grep MimeType= /usr/share/applications/shotwell-viewer.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do echo $i=shotwell-viewer.desktop\; >> shotwell-viewer-defaults.list ; done
+# for i in `grep MimeType= /usr/share/applications/eog.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do echo $i=eog.desktop\; >> eog-defaults.list ; done
 Source4: shotwell-viewer-defaults.list
 
 # Work-around for https://bugs.freedesktop.org/show_bug.cgi?id=40354
 Patch0: 0001-Remove-sub-classing-from-OO.o-mime-types.patch
+
+# support PKGSYSTEM_ENABLE_FSYNC
+# https://bugs.freedesktop.org/show_bug.cgi?id=70366#c30
+Patch1: 0007-Split-out-fdatasync-usage.patch
+Patch2: 0008-Disable-fdatasync-usage-if-PKGSYSTEM_ENABLE_FSYNC-is.patch
+Patch3: 0013-Skip-mime-database-update-if-packages-are-older-than.patch
+Patch4: 0014-Add-n-option-to-update-mime-database.patch
+
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  libxml2-devel
@@ -29,6 +37,7 @@ BuildRequires:  gettext
 BuildRequires: perl(XML::Parser) intltool
 
 Requires(post): glib2
+Requires(post): coreutils
 
 %description
 This is the freedesktop.org shared MIME info database.
@@ -39,18 +48,20 @@ a file. This is generally done by examining the file's name or contents,
 and looking up the correct MIME type in a database.
 
 %prep
-%setup -q
-%patch0 -p1 -b .ooo-zip
+%autosetup
 sed -i s/totem\.desktop/vlc\.desktop\;totem\.desktop/g %SOURCE1
 sed -i s/totem\.desktop/vlc\.desktop\;totem\.desktop/g %SOURCE2
+sed -i s/org\.gnome\.Totem\.desktop/vlc\.desktop\;org\.gnome\.Totem\.desktop/g %SOURCE1
+sed -i s/org\.gnome\.Totem\.desktop/vlc\.desktop\;org\.gnome\.Totem\.desktop/g %SOURCE2
 
 %build
-
-%configure
-# make %{?_smp_mflags}
+%configure --disable-silent-rules --disable-update-mimedb
+# not smp safe, pretty small package anyway
 make
 
 %install
+# speed build a bit
+PKGSYSTEM_ENABLE_FSYNC=0 \
 make install DESTDIR=$RPM_BUILD_ROOT
 
 find $RPM_BUILD_ROOT%{_datadir}/mime -type d \
@@ -68,19 +79,18 @@ cat %SOURCE4 >> $RPM_BUILD_ROOT/%{_datadir}/applications/defaults.list
 ## translations are already in the xml file installed
 rm -rf $RPM_BUILD_ROOT%{_datadir}/locale/*
 
-%if 0%{?fedora} < 17
-# f17+ mozilla-firefox.desktop renamed to firefox.desktop (#736558)
-# defaults.list fixed, handle this exceptional case separately, if at all
-%endif
-
 
 %post
-# Should fail, as it would mean a problem in the mime database
-%{_bindir}/update-mime-database %{_datadir}/mime &> /dev/null
+/bin/touch --no-create %{_datadir}/mime/packages &>/dev/null ||:
+
+%posttrans
+%{_bindir}/update-mime-database %{?fedora:-n} %{_datadir}/mime &> /dev/null ||:
 
 %files -f %{name}.files
 %defattr(-,root,root,-)
-%doc README NEWS HACKING COPYING shared-mime-info-spec.xml
+%{!?_licensedir:%global license %%doc}
+%license COPYING
+%doc README NEWS HACKING shared-mime-info-spec.xml
 %{_bindir}/*
 %{_datadir}/mime/packages/*
 %{_datadir}/applications/defaults.list
@@ -90,6 +100,60 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/locale/*
 %{_mandir}/man*/*
 
 %changelog
+* Tue Sep 30 2014 Bastien Nocera <bnocera@redhat.com> 1.3-15
+- Fix Totem being the default music player (#1146001)
+
+* Wed Sep 03 2014 Bastien Nocera <bnocera@redhat.com> 1.3-14
+- Change default viewer to be eog (#1136953)
+
+* Tue Sep 02 2014 Bastien Nocera <bnocera@redhat.com> 1.3-13
+- Update for totem desktop name change in GNOME 3.14
+
+* Mon Aug 18 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3-12
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
+* Tue Aug  5 2014 Tom Callaway <spot@fedoraproject.org - 1.3-11
+- fix license handling
+
+* Thu Jul 31 2014 Kalev Lember <kalevlember@gmail.com> - 1.3-10
+- Update defaults.list for gedit desktop filename change
+
+* Tue Jul 08 2014 Colin Walters <walters@redhat.com> - 1.3-9
+- Add requires(post) on coreutils to ensure /usr/bin/touch is present
+- Resolves: rhbz#1114119
+
+* Tue Jul 08 2014 Rex Dieter <rdieter@fedoraproject.org> 1.3-8
+- scriptlet polish
+
+* Thu Jul 03 2014 Bastien Nocera <bnocera@redhat.com> 1.3-7
+- Update defaults.list for nautilus desktop filename change (#1095008)
+
+* Fri Jun 27 2014 Rex Dieter <rdieter@fedoraproject.org> 1.3-6
+- pull in upstream support for new -n option, re-enable fsync default on (#1052173)
+
+* Thu Jun 26 2014 Rex Dieter <rdieter@fedoraproject.org> 1.3-5
+- include PKGSYSTEM_ENABLE_FSYNC upstream implementation, except default off (#1052173)
+
+* Sun Jun 08 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.3-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_Mass_Rebuild
+
+* Wed May 21 2014 Rex Dieter <rdieter@fedoraproject.org> 1.3-3
+- support PKGSYSTEM_ENABLE_FSYNC (#1052173, #fdo70366)
+
+* Tue May 20 2014 Rex Dieter <rdieter@fedoraproject.org> 1.3-2
+- %%configure --disable-silent-rules
+
+* Mon May 05 2014 Bastien Nocera <bnocera@redhat.com> 1.3-1
+- Update to 1.3
+
+* Mon May 05 2014 Bastien Nocera <bnocera@redhat.com> 1.2-3
+- Fix file-roller's desktop filename for GNOME 3.12
+
+* Thu Nov 07 2013 Bastien Nocera <bnocera@redhat.com> 1.2-2
+- Update totem mime-type list
+- Handle legacy Real Media files by default now that RealPlayer
+  doesn't exist any more
+
 * Mon Sep 30 2013 Bastien Nocera <bnocera@redhat.com> 1.2-1
 - Update to 1.2
 - Open disk images with gnome-disk-image-writer
