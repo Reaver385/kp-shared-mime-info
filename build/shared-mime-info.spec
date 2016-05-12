@@ -1,13 +1,13 @@
 Summary: Shared MIME information database
 Name: shared-mime-info
-Version: 1.3
-Release: 15%{?dist}
+Version: 1.6
+Release: 1%{?dist}
 Epoch: 1
 License: GPLv2+
 Group: System Environment/Base
 URL: http://freedesktop.org/Software/shared-mime-info
 Source0: http://people.freedesktop.org/~hadess/%{name}-%{version}.tar.xz
-Source1: defaults.list
+Source1: gnome-mimeapps.list
 # Generated with:
 # for i in `cat /home/hadess/Projects/jhbuild/totem/data/mime-type-list.txt | grep -v audio/flac | grep -v ^#` ; do if grep MimeType /home/hadess/Projects/jhbuild/rhythmbox/data/rhythmbox.desktop.in.in | grep -q "$i;" ; then echo "$i=rhythmbox.desktop;org.gnome.Totem.desktop;" >> totem-defaults.list ; else echo "$i=org.gnome.Totem.desktop;" >> totem-defaults.list ; fi ; done ; for i in `cat /home/hadess/Projects/jhbuild/totem/data/uri-schemes-list.txt | grep -v ^#` ; do echo "x-scheme-handler/$i=org.gnome.Totem.desktop;" >> totem-defaults.list ; done
 Source2: totem-defaults.list
@@ -16,18 +16,10 @@ Source2: totem-defaults.list
 Source3: file-roller-defaults.list
 # Generated with:
 # for i in `grep MimeType= /usr/share/applications/eog.desktop | sed 's/MimeType=//' | sed 's/;/ /g'` ; do echo $i=eog.desktop\; >> eog-defaults.list ; done
-Source4: shotwell-viewer-defaults.list
+Source4: eog-defaults.list
 
 # Work-around for https://bugs.freedesktop.org/show_bug.cgi?id=40354
 Patch0: 0001-Remove-sub-classing-from-OO.o-mime-types.patch
-
-# support PKGSYSTEM_ENABLE_FSYNC
-# https://bugs.freedesktop.org/show_bug.cgi?id=70366#c30
-Patch1: 0007-Split-out-fdatasync-usage.patch
-Patch2: 0008-Disable-fdatasync-usage-if-PKGSYSTEM_ENABLE_FSYNC-is.patch
-Patch3: 0013-Skip-mime-database-update-if-packages-are-older-than.patch
-Patch4: 0014-Add-n-option-to-update-mime-database.patch
-
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  libxml2-devel
@@ -38,6 +30,9 @@ BuildRequires: perl(XML::Parser) intltool
 
 Requires(post): glib2
 Requires(post): coreutils
+
+# Disable pkgconfig autodep
+%global __requires_exclude ^/usr/bin/pkg-config$
 
 %description
 This is the freedesktop.org shared MIME info database.
@@ -70,10 +65,16 @@ find $RPM_BUILD_ROOT%{_datadir}/mime -type f -not -path "*/packages/*" \
 | sed -e "s|^$RPM_BUILD_ROOT|%%ghost |" >> %{name}.files
 
 mkdir -p $RPM_BUILD_ROOT/%{_datadir}/applications
-install -m 644 %SOURCE1 $RPM_BUILD_ROOT/%{_datadir}/applications/defaults.list
-cat %SOURCE2 >> $RPM_BUILD_ROOT/%{_datadir}/applications/defaults.list
-cat %SOURCE3 >> $RPM_BUILD_ROOT/%{_datadir}/applications/defaults.list
-cat %SOURCE4 >> $RPM_BUILD_ROOT/%{_datadir}/applications/defaults.list
+install -m 644 %SOURCE1 $RPM_BUILD_ROOT/%{_datadir}/applications/gnome-mimeapps.list
+cat %SOURCE2 >> $RPM_BUILD_ROOT/%{_datadir}/applications/gnome-mimeapps.list
+cat %SOURCE3 >> $RPM_BUILD_ROOT/%{_datadir}/applications/gnome-mimeapps.list
+cat %SOURCE4 >> $RPM_BUILD_ROOT/%{_datadir}/applications/gnome-mimeapps.list
+
+# Support fallback/generic mimeapps.list (currently based on gnome-mimeapps.list), see
+# https://lists.fedoraproject.org/pipermail/devel/2015-July/212403.html
+# https://bugzilla.redhat.com/show_bug.cgi?id=1243049
+cp $RPM_BUILD_ROOT%{_datadir}/applications/gnome-mimeapps.list \
+   $RPM_BUILD_ROOT%{_datadir}/applications/mimeapps.list
 
 ## remove bogus translation files
 ## translations are already in the xml file installed
@@ -86,20 +87,61 @@ rm -rf $RPM_BUILD_ROOT%{_datadir}/locale/*
 %posttrans
 %{_bindir}/update-mime-database %{?fedora:-n} %{_datadir}/mime &> /dev/null ||:
 
+%transfiletriggerin -- %{_datadir}/mime
+update-mime-database -n %{_datadir}/mime
+
+%transfiletriggerpostun -- %{_datadir}/mime
+update-mime-database -n %{_datadir}/mime
+
 %files -f %{name}.files
-%defattr(-,root,root,-)
 %{!?_licensedir:%global license %%doc}
 %license COPYING
 %doc README NEWS HACKING shared-mime-info-spec.xml
 %{_bindir}/*
 %{_datadir}/mime/packages/*
-%{_datadir}/applications/defaults.list
+%{_datadir}/applications/mimeapps.list
+%{_datadir}/applications/gnome-mimeapps.list
 # better to co-own this dir than to pull in pkgconfig
 %dir %{_datadir}/pkgconfig
 %{_datadir}/pkgconfig/shared-mime-info.pc
 %{_mandir}/man*/*
 
 %changelog
+* Tue Feb 23 2016 Bastien Nocera <bnocera@redhat.com> 1.6-1
+- Update to 1.6
+
+* Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 1.5-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
+* Thu Sep 24 2015 Rex Dieter <rdieter@fedoraproject.org> 1.5-2
+- shared-mime-info requires /usr/bin/pkg-config (#1266089)
+
+* Wed Sep 16 2015 Kalev Lember <klember@redhat.com> 1.5-1
+- Update to 1.5
+
+* Fri Aug 14 2015 Matthias Clasen <mclasen@redhat.com> 1.4-7
+- Add file triggers for rebuilding the mime database
+
+* Wed Jul 29 2015 Rex Dieter <rdieter@fedoraproject.org> 1.4-6
+- Provide generic/fallback mimeapps.list too (#1243049)
+
+* Fri Jun 19 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
+
+* Mon Apr 27 2015 Bastien Nocera <bnocera@redhat.com> 1.4-4
+- Make LibreOffice Math the default for CSV files (#1214896)
+
+* Sat Feb 21 2015 Till Maas <opensource@till.name> - 1.4-3
+- Rebuilt for Fedora 23 Change
+  https://fedoraproject.org/wiki/Changes/Harden_all_packages_with_position-independent_code
+
+* Thu Feb 05 2015 Bastien Nocera <bnocera@redhat.com> 1.4-2
+- Rename defaults.list to be GNOME specific and follow
+  the latest changes in the shared mime info spec
+
+* Thu Feb 05 2015 Bastien Nocera <bnocera@redhat.com> 1.4-1
+- Update to 1.4
+
 * Tue Sep 30 2014 Bastien Nocera <bnocera@redhat.com> 1.3-15
 - Fix Totem being the default music player (#1146001)
 
