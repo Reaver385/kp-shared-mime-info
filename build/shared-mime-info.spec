@@ -1,6 +1,6 @@
 Summary: Shared MIME information database
 Name: shared-mime-info
-Version: 1.6
+Version: 1.7
 Release: 1%{?dist}
 Epoch: 1
 License: GPLv2+
@@ -107,6 +107,16 @@ update-mime-database -n %{_datadir}/mime
 %{_mandir}/man*/*
 
 %changelog
+* Mon Sep 05 2016 Bastien Nocera <bnocera@redhat.com> - 1.7-1
+- Update to 1.7
+
+* Sat Jun 04 2016 Bastien Nocera <bnocera@redhat.com> - 1.6-3
+- Remove file-roller as handler for cbz/cbr files
+  See https://bugzilla.gnome.org/show_bug.cgi?id=767244
+
+* Sat Jun 04 2016 Bastien Nocera <bnocera@redhat.com> - 1.6-2
+- Allow detecting multi-page DjVu files by filename
+
 * Tue Feb 23 2016 Bastien Nocera <bnocera@redhat.com> 1.6-1
 - Update to 1.6
 
