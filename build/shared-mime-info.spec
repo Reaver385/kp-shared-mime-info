@@ -19,7 +19,7 @@ Source3: file-roller-defaults.list
 Source4: eog-defaults.list
 
 # Work-around for https://bugs.freedesktop.org/show_bug.cgi?id=40354
-Patch0: 0001-Remove-sub-classing-from-OO.o-mime-types.patch
+#Patch0: 0001-Remove-sub-classing-from-OO.o-mime-types.patch
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  libxml2-devel
